@@ -73,6 +73,9 @@ class GetSourceFromPlaylist:
             self.seek, self.out, self.first, self.last
         )
 
+        self.node['seek'] = self.seek
+        self.node['out'] = self.out
+
     def last_and_next_node(self, index):
         if index - 1 >= 0:
             self.node_last = self.clip_nodes['program'][index - 1]
@@ -111,20 +114,34 @@ class GetSourceFromPlaylist:
 
         if duration:
             self.out = duration
-            self.duration = duration
+            self.duration = duration + 1
             self.first = True
         else:
             current_delta, total_delta = get_delta(self.begin)
             self.out = abs(total_delta)
-            self.duration = abs(total_delta)
+            self.duration = abs(total_delta) + 1
             self.first = False
 
         self.list_date = get_date(False)
         self.mod_time = 0.0
         self.last_time = 0.0
 
-        if self.duration > 2 and fill:
+        if self.out > 2 and fill:
             self.probe, self.src_cmd = gen_filler(self.duration)
+
+            if 'lavfi' in self.src_cmd:
+                src = self.src_cmd[3]
+            else:
+                src = self.src_cmd[1]
+
+            self.node = {
+                'in': 0,
+                'seek': 0,
+                'out': self.out,
+                'duration': self.duration,
+                'source': src
+            }
+
             self.set_filtergraph()
 
         else:
@@ -158,9 +175,9 @@ class GetSourceFromPlaylist:
 
             # loop through all clips in playlist and get correct clip in time
             for index, self.node in enumerate(self.clip_nodes['program']):
-                self.seek = get_float(self.node['in'], 0)
-                self.duration = get_float(self.node['duration'], 20)
-                self.out = get_float(self.node['out'], self.duration)
+                self.seek = get_float(self.node.get('in'), 0)
+                self.duration = get_float(self.node.get('duration'), 20)
+                self.out = get_float(self.node.get('out'), self.duration)
 
                 # first time we end up here
                 if self.first and \
@@ -197,4 +214,4 @@ class GetSourceFromPlaylist:
                     self.eof_handling(True)
 
             if self.src_cmd is not None:
-                yield self.src_cmd + self.filtergraph
+                yield self.src_cmd + self.filtergraph, self.node
