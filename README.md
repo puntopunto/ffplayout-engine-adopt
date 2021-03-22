@@ -1,3 +1,9 @@
+###### *DISCLAIMER*
+
+    Forked from orginal repo for research and local/home adoptation
+    Staying clear, staying upstream
+    Every finded/fixed bug and added really helpful future will be issued/fixed and pull-requested to upstream repo
+
 **ffplayout-engine**
 ================
 
